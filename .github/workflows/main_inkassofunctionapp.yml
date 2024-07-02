@@ -1,7 +1,4 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy Node.js project to Azure Function App - InkassoFunctionApp
+name: Build and deploy Java project to Azure Function App - InkassoFunction
 
 on:
   push:
@@ -10,35 +7,33 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '18.x' # set this to the node version to use (supports 8.x, 10.x, 12.x)
+  AZURE_FUNCTIONAPP_NAME: InkassoFunction # Set this to your function app name on Azure
+  PACKAGE_DIRECTORY: '.' # Set this to the directory which contains pom.xml file
+  JAVA_VERSION: '17' # Set this to the java version to use
 
 jobs:
   build-and-deploy:
     runs-on: windows-latest
     steps:
-      - name: 'Checkout GitHub Action'
+      - name: Checkout GitHub Action
         uses: actions/checkout@v4
 
-      - name: Setup Node ${{ env.NODE_VERSION }} Environment
-        uses: actions/setup-node@v3
+      - name: Setup Java Sdk
+        uses: actions/setup-java@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          java-version: ${{ env.JAVA_VERSION }}
 
-      - name: 'Resolve Project Dependencies Using Npm'
-        shell: pwsh
+      - name: Restore Project Dependencies Using Mvn
         run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          pushd './${{ env.PACKAGE_DIRECTORY }}'
+          mvn clean package
           popd
 
-      - name: 'Run Azure Functions Action'
+      - name: Run Azure Functions Action
         uses: Azure/functions-action@v1
         id: fa
         with:
-          app-name: 'InkassoFunctionApp'
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           slot-name: 'Production'
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0F9AB63C658848268CE68786FF6BF298 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1F55295BF1F4B83ACE8DFDF5620EFEBF }}
+          package: '${{ env.PACKAGE_DIRECTORY }}'
