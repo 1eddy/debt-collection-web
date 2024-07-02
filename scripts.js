@@ -1,40 +1,28 @@
-const { CosmosClient } = require("@azure/cosmos");
-
-const endpoint = process.env.COSMOS_DB_ENDPOINT;
-const key = process.env.COSMOS_DB_KEY;
-const databaseId = "DebtCollectionDB";
-const containerId = "DebtItems";
-
-const client = new CosmosClient({ endpoint, key });
-
-module.exports = async function (context, req) {
+async function fetchData() {
     try {
-        const { database } = await client.databases.createIfNotExists({ id: databaseId });
-        const { container } = await database.containers.createIfNotExists({ id: containerId });
-
-        if (req.method === "POST") {
-            const { id, description, amount } = req.body;
-            const { resource: createdItem } = await container.items.create({ id, description, amount });
-            context.res = {
-                status: 201,
-                body: createdItem
-            };
-        } else if (req.method === "GET") {
-            const { resources: items } = await container.items.readAll().fetchAll();
-            context.res = {
-                status: 200,
-                body: items
-            };
-        } else {
-            context.res = {
-                status: 405,
-                body: "Method not allowed"
-            };
-        }
+        const response = await fetch('/api');
+        const data = await response.json();
+        console.log('Debt Items:', data);
     } catch (error) {
-        context.res = {
-            status: 500,
-            body: `Error: ${error.message}`
-        };
+        console.error('Error fetching data:', error);
     }
-};
+}
+
+async function addItem(id, description, amount) {
+    try {
+        const response = await fetch('/api', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id, description, amount })
+        });
+        const newItem = await response.json();
+        console.log('Added Item:', newItem);
+    } catch (error) {
+        console.error('Error adding item:', error);
+    }
+}
+
+// Call fetchData to fetch items when the script loads
+fetchData();
