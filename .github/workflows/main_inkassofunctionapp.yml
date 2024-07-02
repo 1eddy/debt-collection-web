@@ -1,4 +1,4 @@
-name: Build and deploy Java project to Azure Function App - InkassoFunction
+name: Build and deploy Node.js project to Azure Function App - InkassoFunctionApp
 
 on:
   push:
@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_NAME: InkassoFunction # Set this to your function app name on Azure
-  PACKAGE_DIRECTORY: '.' # Set this to the directory which contains pom.xml file
-  JAVA_VERSION: '17' # Set this to the java version to use
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # Set this to the path to your web app project, defaults to the repository root
+  NODE_VERSION: '18.x' # Set this to the node version to use (supports 8.x, 10.x, 12.x)
 
 jobs:
   build-and-deploy:
@@ -18,22 +17,24 @@ jobs:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
 
-      - name: Setup Java Sdk
-        uses: actions/setup-java@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
-          java-version: ${{ env.JAVA_VERSION }}
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Restore Project Dependencies Using Mvn
+      - name: Resolve Project Dependencies Using Npm
         run: |
-          pushd './${{ env.PACKAGE_DIRECTORY }}'
-          mvn clean package
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          npm install
+          npm run build --if-present
+          npm run test --if-present
           popd
 
       - name: Run Azure Functions Action
         uses: Azure/functions-action@v1
         id: fa
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          app-name: 'InkassoFunctionApp'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_1F55295BF1F4B83ACE8DFDF5620EFEBF }}
-          package: '${{ env.PACKAGE_DIRECTORY }}'
+          package: './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_6F9A3BC5B84825CEC76B7F66BFF25B9 }}
